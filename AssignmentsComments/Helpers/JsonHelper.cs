@@ -7,12 +7,16 @@ public class JsonHelper
     {
         try
         {
+            // Fetch raw response from Tumblr API
             string response = await httpClient.GetStringAsync(url);
             
+            // Debug output to diagnose API response issues
             Console.WriteLine($"\nDEBUG - First 200 chars of response:");
             Console.WriteLine(response.Length > 200 ? response.Substring(0, 200) : response);
             Console.WriteLine($"Response length: {response.Length} characters\n");
             
+            // Tumblr API v1 wraps JSON in JavaScript: var tumblr_api_read = {...};
+            // Extract the JSON portion using regex
             var match = Regex.Match(response, @"var tumblr_api_read = (.+);?\s*$", RegexOptions.Singleline);
             
             if (match.Success && match.Groups.Count > 1)
