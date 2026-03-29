@@ -1,0 +1,20 @@
+# Build Folders
+bin/
+obj/
+
+# Visual Studio / VS Code
+.vs/
+.vscode/
+
+# Build Outputs
+*.dll
+*.exe
+*.pdb
+
+# NuGet
+project.assets.json
+*.nuget.cache
+
+# Other temp files
+*.tmp
+*.log
