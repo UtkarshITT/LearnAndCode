@@ -1,0 +1,55 @@
+@startuml AddExpense_SequenceDiagram
+
+actor User as u
+participant "ConsoleMenu (UI)" as UI
+participant "AddExpenseCommand (UI)" as CMD
+participant "InputValidator (UI)" as VAL
+participant "ExpenseService (App)" as SVC
+participant "IExpenseRepository (App)" as IREPO
+participant "SqliteRepoImpl (Infra)" as REPO
+database DB
+
+u -> UI: Selects "Add Expense"
+activate UI
+
+' Console Menu uses Command Pattern
+UI -> CMD: Execute()
+activate CMD
+
+    CMD -> u: Prompt for (Date, Amount, Category, Desc)
+    u --> CMD: Enters data
+    
+    ' Console Validation
+    CMD -> VAL: ValidateInput(amountString, dateString)
+    VAL --> CMD: ParsedValues (decimal, DateTime)
+
+    ' Call Business Logic with Domain Model
+    CMD -> SVC: AddNewExpense(expenseModel)
+    activate SVC
+        
+        note right of SVC: Business Rule: Check budget\nbefore saving
+        SVC -> SVC: CheckBudget(expenseModel)
+        
+        ' Talk to Interface, not Implementation
+        SVC -> IREPO: AddExpense(expenseModel)
+        activate IREPO
+            IREPO -> REPO: SaveChange()
+            activate REPO
+                REPO -> DB: SQL INSERT INTO Transactions...
+                activate DB
+                DB --> REPO: Success
+                deactivate DB
+            REPO --> IREPO: Return
+            deactivate REPO
+        IREPO --> SVC: Return
+        deactivate IREPO
+    SVC --> CMD: Success
+    deactivate SVC
+
+CMD -> u: Display "Expense added successfully"
+deactivate CMD
+
+UI -> UI: Wait for next menu choice
+deactivate UI
+
+@enduml

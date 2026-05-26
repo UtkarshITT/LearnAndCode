@@ -1,0 +1,129 @@
+@startuml PersonalFinanceManager_ClassDiagram
+
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+
+' --- Define Colors for Layers ---
+!define PRESENTATION_CLR #cfe2f3
+!define APPLICATION_CLR #d9ead3
+!define DOMAIN_CLR #fff2cc
+!define INFRASTRUCTURE_CLR #f4cccc
+
+' --- DOMAIN LAYER (Core Entities) ---
+package "Domain Entities" <<Rectangle>> DOMAIN_CLR {
+    class Transaction {
+        + Id: int
+        + Date: DateTime
+        + Amount: decimal
+        + CategoryId: int
+        + Description: string
+        + Type: TransactionType
+    }
+    class Category {
+        + Id: int
+        + Name: string
+        + Type: TransactionType
+        + BudgetAmount: decimal?
+    }
+    enum TransactionType {
+        Income
+        Expense
+    }
+}
+
+' --- INFRASTRUCTURE LAYER (Data Access Implementation) ---
+package "Infrastructure (Persistence)" <<Rectangle>> INFRASTRUCTURE_CLR {
+    class SqliteDbContext {
+        + ConnectionString: string
+    }
+    class ExpenseRepositoryImpl {
+        - _db: SqliteDbContext
+        + ExpenseRepositoryImpl(db)
+    }
+    class IncomeRepositoryImpl {
+        - _db: SqliteDbContext
+    }
+}
+
+' --- APPLICATION LAYER (Interfaces & Business Logic) ---
+package "Application Interfaces" <<Rectangle>> APPLICATION_CLR {
+    interface IExpenseRepository {
+        + AddExpense(trans: Transaction)
+        + GetAllExpenses(): List<Transaction>
+        + GetExpensesByFilter(filter: IExpenseFilter): List<Transaction>
+    }
+    interface IIncomeRepository {
+        + AddIncome(trans: Transaction)
+        + GetAllIncome(): List<Transaction>
+    }
+    ' STRATEGY PATTERN
+    interface IExpenseFilter {
+        + Apply(query: IQueryable<Transaction>): IQueryable<Transaction>
+    }
+}
+
+package "Application Services (Business Rules)" <<Rectangle>> APPLICATION_CLR {
+    class ExpenseService {
+        - _repo: IExpenseRepository
+        - _budgetRepo: IBudgetRepository
+        ' Dependency Injection via constructor
+        + ExpenseService(IExpenseRepository, IBudgetRepository)
+        + AddNewExpense(e: Transaction)
+        + IsOverBudget(categoryId: int): bool
+    }
+    class DateRangeFilter {
+        - Start: DateTime
+        - End: DateTime
+    }
+    class CategoryFilter {
+        - CategoryId: int
+    }
+}
+
+' --- PRESENTATION LAYER (Console UI & Commands) ---
+package "Presentation (Console UI)" <<Rectangle>> PRESENTATION_CLR {
+    class ConsoleMenu {
+        - _commands: Dictionary<int, ICommand>
+        + Run()
+        - PrintMenu()
+    }
+    ' COMMAND PATTERN
+    interface ICommand {
+        + Execute()
+    }
+    class AddExpenseCommand {
+        - _expenseService: ExpenseService
+        + Execute()
+        - CaptureInput()
+    }
+    class ViewSummaryCommand {
+        - _summaryService: SummaryService
+        + Execute()
+    }
+}
+
+' --- Relationships (Implementation & Dependency) ---
+
+' Persistence Implementation
+IExpenseRepository <|.. ExpenseRepositoryImpl
+IIncomeRepository <|.. IncomeRepositoryImpl
+ExpenseRepositoryImpl --> SqliteDbContext
+
+' Application Logic dependencies
+ExpenseService --> IExpenseRepository
+ExpenseService ..> Transaction
+ExpenseService ..> IExpenseFilter
+
+' Strategy implementations
+IExpenseFilter <|.. DateRangeFilter
+IExpenseFilter <|.. CategoryFilter
+
+' Presentation & Command dependencies
+ConsoleMenu --> ICommand
+AddExpenseCommand ..|> ICommand
+ViewSummaryCommand ..|> ICommand
+
+' UI using services (Dependency Injection flow)
+AddExpenseCommand --> ExpenseService
+
+@enduml

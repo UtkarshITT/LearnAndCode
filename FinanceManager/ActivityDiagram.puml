@@ -1,0 +1,49 @@
+@startuml UpdateBudget_ActivityDiagram
+
+|User|
+start
+:Select "Set/Update Budget" from Menu;
+
+|Console Presentation|
+:Display List of Categories;
+:Prompt user to select Category ID;
+
+repeat
+  |User|
+  :Enter Category ID;
+  
+  |Console Presentation|
+  if (ID exists and is 'Expense' type?) then (yes)
+    break
+  else (no)
+    :Display Error: Invalid ID;
+  endif
+repeat while (Keep prompting)
+
+:Prompt user for new Budget Amount;
+
+repeat
+  |User|
+  :Enter Amount;
+  
+  |Console Presentation|
+  if (Input is numeric AND > 0?) then (yes)
+    :Parsed Amount;
+    break
+  else (no)
+    :Display Error: Invalid Amount;
+  endif
+repeat while (Keep prompting)
+
+|Application Services|
+:Call BudgetService.Update(categoryId, amount);
+
+|Infrastructure (DB)|
+:Update database row in Categories table;
+
+|Console Presentation|
+:Display "Budget updated successfully";
+
+stop
+
+@enduml

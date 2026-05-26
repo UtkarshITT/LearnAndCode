@@ -1,0 +1,32 @@
+@startuml PersonalFinanceManager_ERD
+
+!theme plain
+hide circle
+skinparam linetype ortho
+
+entity "Categories" as cat {
+  * category_id : INTEGER <<PK>>
+  --
+  * name : TEXT (e.g., Food, Salary, Rent)
+  * type : TEXT (Expense/Income)
+  budget_amount : DECIMAL (Optional, only for expense type)
+}
+
+entity "Transactions" as trans {
+  * transaction_id : INTEGER <<PK>>
+  --
+  * type : TEXT (Expense/Income)
+  * date : DATE
+  * amount : DECIMAL
+  description : TEXT
+  * category_id : INTEGER <<FK>>
+}
+
+' Relationships
+cat "1" -- "0..*" trans : "classifies"
+
+note right of cat::type
+  Constraint: 'Income' or 'Expense'
+end note
+
+@enduml
